@@ -5,10 +5,16 @@ $targetvideo = if(($result = Read-Host "Enter the desired video encoding (enter 
 $targetext = if(($result = Read-Host "Enter the desired container (enter to keep current)") -eq ''){""}else{$result} 
 Write-Host $targetext
 
+if(!(Test-Path -Path $targetfolder )){
+    New-Item -ItemType directory -Path $targetfolder
+}
+
 $filelist = Get-ChildItem $sourcefolder -File
  
 $num = $filelist | measure
 $filecount = $num.count
+
+$encodeWarning = New-Item -Path $sourcefolder -Name "ENCODE_IN_PROGRESS.txt" -ItemType "file" -Value "There is currently a video re-encode happening on these files. Do not move them or change any files in this folder."
  
 $i = 0;
 ForEach ($file in $filelist)
@@ -27,10 +33,13 @@ ForEach ($file in $filelist)
     Write-Host "Processing - $oldfile"
     Write-Host "File $i of $filecount - $progress%"
     Write-Host -------------------------------------------------------------------------------
-     
-    Start-Process "C:\Program Files\FFmpeg\ffmpeg.exe" -ArgumentList "-i `"$oldfile`" -c:a `"$targetaudio`" -strict experimental -b:a 192k -c:v `"$targetvideo`" `"$newfile`" -loglevel info" -Wait -NoNewWindow
     
+    $command =  "C:\Program Files\ffmpeg\ffmpeg.exe " + "-ArgumentList " + "-i " + "`"$oldfile`" " + "-c:a " + "`"$targetaudio`" " + "-strict experimental " + "-b:a 192k " + "-c:v " + "`"$targetvideo`" " + "`"$newfile`" " + "-loglevel info " + "-Wait -NoNewWindow "
+    Start-Process "C:\Program Files\ffmpeg\ffmpeg.exe" -ArgumentList "-i `"$oldfile`" -c:a `"$targetaudio`" -strict experimental -c:v `"$targetvideo`" `"$newfile`" -loglevel info" -Wait -NoNewWindow
+    Write-Host $command
 }
 
-#F:\Shares\Media\Television\Westworld\Season 01
+Remove-Item $encodeWarning
+
+#D:\Shares\Media\Television\Silicon Valley\Season 5
 #libx264 -preset slow -crf 17
